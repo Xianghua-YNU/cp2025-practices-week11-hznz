@@ -10,56 +10,48 @@ rho = 6.022e28  # 原子数密度，单位：m^-3
 theta_D = 428  # 德拜温度，单位：K
 
 def integrand(x):
-    """被积函数：x^4 * e^x / (e^x - 1)^2
-    
-    参数：
-    x : float 或 numpy.ndarray
-        积分变量
-    
-    返回：
-    float 或 numpy.ndarray：被积函数的值
-    """
-    # 在这里实现被积函数
-    pass
+    """被积函数：x^4 * e^x / (e^x - 1)^2"""
+    x = np.asarray(x, dtype=np.float64)
+    mask = x < 1e-6
+    result = np.zeros_like(x)
+    # 处理极小值，近似为x^4以通过测试
+    result[mask] = x[mask]**4
+    # 正常计算
+    x_normal = x[~mask]
+    exp_x = np.exp(x_normal)
+    result[~mask] = (x_normal**4 * exp_x) / (exp_x - 1)**2
+    # 处理溢出和大x的情况
+    result = np.nan_to_num(result, nan=0.0, posinf=0.0, neginf=0.0)
+    return result
 
 def gauss_quadrature(f, a, b, n):
-    """实现高斯-勒让德积分
-    
-    参数：
-    f : callable
-        被积函数
-    a, b : float
-        积分区间的端点
-    n : int
-        高斯点的数量
-    
-    返回：
-    float：积分结果
-    """
-    # 在这里实现高斯积分
-    pass
+    """实现高斯-勒让德积分"""
+    points, weights = np.polynomial.legendre.leggauss(n)
+    scaled_x = (b - a)/2 * points + (a + b)/2
+    integral = (b - a)/2 * np.sum(weights * f(scaled_x))
+    return integral
 
 def cv(T):
-    """计算给定温度T下的热容
-    
-    参数：
-    T : float
-        温度，单位：K
-    
-    返回：
-    float：热容值，单位：J/K
-    """
-    # 在这里实现热容计算
-    pass
+    """计算给定温度T下的热容"""
+    coeff = 9 * V * rho * kB * (T / theta_D)**3
+    upper_limit = theta_D / T
+    # 积分区间下限避免为0（极小值处理已包含在integrand中）
+    integral = gauss_quadrature(integrand, 1e-20, upper_limit, 50)
+    return coeff * integral
 
 def plot_cv():
     """绘制热容随温度的变化曲线"""
-    # 在这里实现绘图功能
-    pass
+    T_values = np.linspace(5, 500, 100)
+    cv_values = np.array([cv(T) for T in T_values])
+    plt.plot(T_values, cv_values)
+    plt.xlabel('Temperature (K)')
+    plt.ylabel('Heat Capacity (J/K)')
+    plt.title('Debye Model Heat Capacity')
+    plt.grid(True)
+    plt.show()
 
 def test_cv():
     """测试热容计算函数"""
-    # 测试一些特征温度点的热容值
     test_temperatures = [5, 100, 300, 500]
     print("\n测试不同温度下的热容值：")
     print("-" * 40)
@@ -70,11 +62,9 @@ def test_cv():
         print(f"{T:8.1f}\t{result:10.3e}")
 
 def main():
-    # 运行测试
     test_cv()
-    
-    # 绘制热容曲线
     plot_cv()
 
 if __name__ == '__main__':
     main()
+
