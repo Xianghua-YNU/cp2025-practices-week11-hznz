@@ -52,7 +52,7 @@ def plot_cv():
 
 def test_cv():
     """测试热容计算函数"""
-    test_temperatures = [5, 100, 300, 500]
+    test_temperatures = [5, 100, 300, 500,1000]
     print("\n测试不同温度下的热容值：")
     print("-" * 40)
     print("温度 (K)\t热容 (J/K)")
