@@ -3,46 +3,52 @@ import matplotlib.pyplot as plt
 
 # --- 物理和线圈参数 ---
 MU0 = 4 * np.pi * 1e-7  # 真空磁导率 (T*m/A)
-I = 1.0  # 电流 (A) - 假设为1A，实际计算中常数因子可以合并
+I = 1.0  # 电流 (A)
 
 def Helmholtz_coils(r_low, r_up, d):
     '''
-    Calculate the Magnetic Field of Helmhotz coils
-    input:
-        r_low: radius of lower coil
-        r_up : radius of upper coil
-        d: distance between the two coils
-    return:
-        X,Y: 空间坐标
-        By, Bz： y,z方向的磁场
+    计算亥姆霍兹线圈的磁场。
+    下方线圈位于z=-d/2，上方线圈位于z=+d/2。
     '''
-    
-    phi = np.linspace(0, 2*np.pi, 20) #角度
+    print(f"开始计算磁场: r_low={r_low}, r_up={r_up}, d={d}")
+
+    # 1. 定义积分角度和空间网格
+    phi = np.linspace(0, 2 * np.pi, 20)
     r = max(r_low, r_up)
-    y = np.linspace(-2*r,2*r,25)
-    z = np.linspace(-2*d,2*d,25)
+    y = np.linspace(-2 * r, 2 * r, 25)
+    z = np.linspace(-1.5 * d, 1.5 * d, 25)
 
-    Y,Z,phi = np.meshgrid(y,z,phi)
+    # 2. 创建三维网格
+    Y, Z, Phi = np.meshgrid(y, z, phi)
 
-    #Calcualte the square root of the distance between the point and dl of the coils
-    r1 = np.sqrt((r_low*np.cos(phi))**2 + (Y-r_low*np.sin(phi))**2 + (Z-d/2)**2) #到第一个环的距离
-    r2  = np.sqrt((r_up*np.cos(phi))**2 + (Y-r_up*np.sin(phi))**2 + (Z+d/2)**2) #到第二个环的距离
+    # 3. 计算到下方线圈的距离
+    dist1_sq = (r_low * np.cos(Phi))**2 + (Y - r_low * np.sin(Phi))**2 + (Z + d/2)**2
+    dist1 = np.sqrt(dist1_sq)
+    dist1[dist1 < 1e-9] = 1e-9  # 避免除零
 
+    # 4. 计算到上方线圈的距离
+    dist2_sq = (r_up * np.cos(Phi))**2 + (Y - r_up * np.sin(Phi))**2 + (Z - d/2)**2
+    dist2 = np.sqrt(dist2_sq)
+    dist2[dist2 < 1e-9] = 1e-9
 
-    dby = r_low * (Z-d/2) * np.sin(phi)/r1**3 + r_up * (Z+d/2) * np.sin(phi)/r2**3 #角度phi处上下两个电流元产生的y方向磁场
-    dbz = r_low *(r_low-Y*np.sin(phi))/r1**3 + r_up *(r_up-Y*np.sin(phi))/r2**3  #角度phi处上下两个电流元产生的z方向磁场
+    # 5. 计算被积函数
+    dBy_integrand = (r_low * (Z + d/2) * np.sin(Phi)) / dist1**3 + (r_up * (Z - d/2) * np.sin(Phi)) / dist2**3
+    dBz_integrand = (r_low * (r_low - Y * np.sin(Phi)) / dist1**3 + (r_up * (r_up - Y * np.sin(Phi)))) / dist2**3
 
-    By_unscaled = np.trapezoid(dby) #y方向的磁场，对整个电流环积分
-    Bz_unscaled = np.trapezoid(dbz) #z方向的磁场，对整个电流环积分
-    
+    # 6. 对phi积分
+    By_unscaled = np.trapezoid(dBy_integrand)
+    Bz_unscaled = np.trapezoid(dBz_integrand)
+
+    # 7. 应用比例因子
     scaling_factor = (MU0 * I) / (4 * np.pi)
     By = scaling_factor * By_unscaled
     Bz = scaling_factor * Bz_unscaled
-    
+
+    print("磁场计算完成.")
     return Y, Z, By, Bz
 
-
 def plot_magnetic_field_streamplot(r_low, r_up, d):
+    """绘制磁场流线图"""
     Y, Z, by, bz = Helmholtz_coils(.5,.5,0.8)
 
     bSY = np.arange(-0.45,0.50,0.05) #磁力线的起点的y坐标
