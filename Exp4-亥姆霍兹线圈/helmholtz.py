@@ -22,18 +22,18 @@ def Helmholtz_coils(r_low, r_up, d):
     Y, Z, Phi = np.meshgrid(y, z, phi)
 
     # 3. 计算到下方线圈的距离
-    dist1_sq = (r_low * np.cos(Phi))**2 + (Y - r_low * np.sin(Phi))**2 + (Z + d/2)**2
+    dist1_sq = (r_low * np.cos(Phi))**2 + (Y - r_low * np.sin(Phi))**2 + (Z - d/2)**2
     dist1 = np.sqrt(dist1_sq)
     dist1[dist1 < 1e-9] = 1e-9  # 避免除零
 
     # 4. 计算到上方线圈的距离
-    dist2_sq = (r_up * np.cos(Phi))**2 + (Y - r_up * np.sin(Phi))**2 + (Z - d/2)**2
+    dist2_sq = (r_up * np.cos(Phi))**2 + (Y - r_up * np.sin(Phi))**2 + (Z + d/2)**2
     dist2 = np.sqrt(dist2_sq)
     dist2[dist2 < 1e-9] = 1e-9
 
     # 5. 计算被积函数
-    dBy_integrand = (r_low * (Z + d/2) * np.sin(Phi)) / dist1**3 + (r_up * (Z - d/2) * np.sin(Phi)) / dist2**3
-    dBz_integrand = (r_low * (r_low - Y * np.sin(Phi)) / dist1**3 + (r_up * (r_up - Y * np.sin(Phi)))) / dist2**3
+    dBy_integrand = r_low * (Z - d/2) * np.sin(Phi) / dist1**3 + r_up * (Z + d/2) * np.sin(Phi) / dist2**3
+    dBz_integrand = r_low * (r_low - Y * np.sin(Phi)) / dist1**3 + r_up * (r_up - Y * np.sin(Phi)) / dist2**3
 
     # 6. 对phi积分
     By_unscaled = np.trapezoid(dBy_integrand)
@@ -69,3 +69,4 @@ if __name__ == "__main__":
     coil_radius = 0.5  # 两个线圈的半径 (m)
     coil_distance = 0.8  # 两个线圈之间的距离 (m)
     plot_magnetic_field_streamplot(coil_radius, coil_radius, coil_distance)
+
