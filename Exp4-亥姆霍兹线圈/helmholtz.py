@@ -33,7 +33,7 @@ def Helmholtz_coils(r_low, r_up, d):
 
     # 5. 计算被积函数
     dBy_integrand = (r_low * (Z + d/2) * np.sin(Phi)) / dist1**3 + (r_up * (Z - d/2) * np.sin(Phi)) / dist2**3
-    dBz_integrand = (r_low * (r_low - Y * np.sin(Phi)) / dist1**3 + (r_up * (r_up - Y * np.sin(Phi)) / dist2**3
+    dBz_integrand = (r_low * (r_low - Y * np.sin(Phi)) / dist1**3 + (r_up * (r_up - Y * np.sin(Phi)))) / dist2**3
 
     # 6. 对phi积分
     By_unscaled = np.trapezoid(dBy_integrand, x=phi_angles, axis=-1)
